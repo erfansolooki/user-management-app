@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { useUsers } from "../../hooks/useUsers";
+import { useCrudStore } from "../../store/crudStore";
 import ConfirmationModal from "../ui/ConfirmationModal";
 import { type User } from "../../types";
 import Card from "../ui/Card";
@@ -38,14 +39,20 @@ const UserList = () => {
     clearError,
   } = useUsers();
 
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">(
-    "view"
-  );
+  const {
+    isCreateModalOpen,
+    isEditModalOpen,
+    isViewModalOpen,
+    isDeleteModalOpen,
+    userToDelete,
+    openCreateModal,
+    openEditModal,
+    openViewModal,
+    openDeleteModal,
+    closeAllModals,
+  } = useCrudStore();
+
   const [isMobile, setIsMobile] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   // Handle responsive behavior
   useEffect(() => {
@@ -71,44 +78,37 @@ const UserList = () => {
   // Remove the old handlePageChange since it's now provided by useUsers hook
 
   const handleCreateUser = () => {
-    setSelectedUser(null);
-    setModalMode("create");
-    setIsModalOpen(true);
+    openCreateModal();
   };
 
   const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setModalMode("edit");
-    setIsModalOpen(true);
+    openEditModal(user);
   };
 
   const handleViewUser = (user: User) => {
-    setSelectedUser(user);
-    setModalMode("view");
-    setIsModalOpen(true);
+    openViewModal(user);
   };
 
-  const handleDeleteUser = async (id: number) => {
-    setUserToDelete(id);
-    setIsDeleteModalOpen(true);
+  const handleDeleteUser = (id: number) => {
+    const user = users.find((u) => u.id === id);
+    if (user) {
+      openDeleteModal(user);
+    }
   };
 
   const handleConfirmDelete = async () => {
     if (userToDelete) {
-      await deleteUser(userToDelete);
-      setIsDeleteModalOpen(false);
-      setUserToDelete(null);
+      await deleteUser(userToDelete.id);
+      closeAllModals();
     }
   };
 
   const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false);
-    setUserToDelete(null);
+    closeAllModals();
   };
 
   const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedUser(null);
+    closeAllModals();
   };
 
   const handleModalSuccess = () => {
@@ -250,12 +250,27 @@ const UserList = () => {
         </>
       )}
 
-      {/* User Modal */}
+      {/* Create User Modal */}
       <UserModal
-        isOpen={isModalOpen}
+        isOpen={isCreateModalOpen}
         onClose={handleModalClose}
-        user={selectedUser}
-        mode={modalMode}
+        mode="create"
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* Edit User Modal */}
+      <UserModal
+        isOpen={isEditModalOpen}
+        onClose={handleModalClose}
+        mode="edit"
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* View User Modal */}
+      <UserModal
+        isOpen={isViewModalOpen}
+        onClose={handleModalClose}
+        mode="view"
         onSuccess={handleModalSuccess}
       />
 

@@ -43,6 +43,8 @@ src/
 │   │   ├── Card.tsx        # Compound card component
 │   │   ├── Modal.tsx       # Reusable modal with compound pattern
 │   │   ├── Alert.tsx       # Alert component with variants
+│   │   ├── FormError.tsx   # Reusable form error component
+│   │   ├── UserAvatar.tsx  # User avatar with fallback
 │   │   └── LoadingSpinner.tsx
 │   ├── Auth/               # Authentication components
 │   │   └── LoginForm.tsx   # Login form with validation
@@ -283,6 +285,29 @@ const useFormValidation = <T extends Record<string, any>>({
 }: FormConfig<T>) => {
   // Generic implementation for any form
 };
+```
+
+#### **Reusable Form Error Component**
+
+```tsx
+// Simple error display
+<FormError error={errors.name} />
+
+// With icon and custom styling
+<FormError
+  error={errors.email}
+  showIcon
+  variant="block"
+  className="font-semibold"
+/>
+
+// Compound component usage
+<FormErrorCompound.Block error={errors.general} showIcon />
+
+// Custom content
+<FormError>
+  <span className="font-bold">Custom error message</span>
+</FormError>
 ```
 
 #### **Query Key Factory**
