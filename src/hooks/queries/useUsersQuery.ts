@@ -15,7 +15,9 @@ export const useUsersQuery = (params: PaginationParams = {}) => {
   return useQuery({
     queryKey: queryKeys.users.list(params as Record<string, unknown>),
     queryFn: () => apiService.getUsers(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // No caching - always fetch fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 };
 

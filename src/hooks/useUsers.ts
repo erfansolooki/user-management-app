@@ -2,7 +2,7 @@
  * Custom hook for user management operations
  * Uses React Query for API calls
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useUsersQuery,
   useUserQuery,
@@ -12,17 +12,25 @@ import {
 } from "./queries/useUsersQuery";
 import { type PaginationParams, type User } from "../types";
 
-export const useUsers = (params?: PaginationParams) => {
-  const [currentParams, setCurrentParams] = useState<PaginationParams>(
-    params || {}
-  );
-
+export const useUsers = () => {
   // Filter and sort state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<keyof User | "">("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const usersQuery = useUsersQuery(currentParams);
+  // View state
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+
+  // Server-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(4); // Show 4 items per page
+
+  // Fetch users with pagination from API
+  const usersQuery = useUsersQuery({
+    page: currentPage,
+    per_page: itemsPerPage,
+  });
+
   const createUserMutation = useCreateUserMutation();
   const updateUserMutation = useUpdateUserMutation();
   const deleteUserMutation = useDeleteUserMutation();
@@ -66,7 +74,12 @@ export const useUsers = (params?: PaginationParams) => {
     }
   };
 
-  // Filter and sort logic
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortBy, sortOrder]);
+
+  // Apply client-side filtering and sorting to the current page data
   const filteredAndSortedUsers = useMemo(() => {
     let users = usersQuery.data?.data.data || [];
 
@@ -106,19 +119,24 @@ export const useUsers = (params?: PaginationParams) => {
   }, [usersQuery.data?.data.data, searchTerm, sortBy, sortOrder]);
 
   const fetchUsers = (newParams?: PaginationParams) => {
-    if (newParams) {
-      setCurrentParams(newParams);
+    if (newParams?.page) {
+      setCurrentPage(newParams.page);
     } else {
       usersQuery.refetch();
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return {
     // State from users query
-    users: filteredAndSortedUsers,
+    users: filteredAndSortedUsers, // Show filtered/sorted users from current page
+    allUsers: usersQuery.data?.data.data || [], // Original API data for total count
     originalUsers: usersQuery.data?.data.data || [],
     totalPages: usersQuery.data?.data.total_pages || 0,
-    currentPage: usersQuery.data?.data.page || 1,
+    currentPage: currentPage, // Use local state instead of API response
     totalUsers: usersQuery.data?.data.total || 0,
     isLoading: usersQuery.isLoading,
     error: usersQuery.error?.message,
@@ -131,8 +149,13 @@ export const useUsers = (params?: PaginationParams) => {
     sortOrder,
     setSortOrder,
 
+    // View state
+    viewMode,
+    setViewMode,
+
     // Actions
     fetchUsers,
+    handlePageChange,
     createUser: handleCreateUser,
     updateUser: handleUpdateUser,
     deleteUser: handleDeleteUser,
