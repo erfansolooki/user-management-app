@@ -71,9 +71,8 @@ const UserModal = ({
           if (result.success) {
             onSuccess();
             handleClose();
-          } else {
-            alert(result.error);
           }
+          // Error handling is now done in the useUsers hook with toast notifications
         } else if (mode === "edit" && currentUser) {
           const result = await updateUser(
             currentUser.id,
@@ -81,9 +80,8 @@ const UserModal = ({
           );
           if (result.success) {
             onSuccess();
-          } else {
-            alert(result.error);
           }
+          // Error handling is now done in the useUsers hook with toast notifications
         }
       } catch (error) {
         console.error("Modal submission error:", error);
@@ -104,6 +102,7 @@ const UserModal = ({
     } else if (mode === "create") {
       resetForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, mode]);
 
   const handleClose = () => {

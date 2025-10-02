@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { useUsers } from "../../hooks/useUsers";
+import ConfirmationModal from "../ui/ConfirmationModal";
 import { type User } from "../../types";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
@@ -43,6 +44,8 @@ const UserList = () => {
     "view"
   );
   const [isMobile, setIsMobile] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   // Handle responsive behavior
   useEffect(() => {
@@ -86,12 +89,21 @@ const UserList = () => {
   };
 
   const handleDeleteUser = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      const result = await deleteUser(id);
-      if (!result.success) {
-        alert(result.error);
-      }
+    setUserToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (userToDelete) {
+      await deleteUser(userToDelete);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setUserToDelete(null);
   };
 
   const handleModalClose = () => {
@@ -245,6 +257,18 @@ const UserList = () => {
         user={selectedUser}
         mode={modalMode}
         onSuccess={handleModalSuccess}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        variant="danger"
       />
     </div>
   );

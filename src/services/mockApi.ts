@@ -6,7 +6,6 @@ import {
   type User,
   type UsersListResponse,
   type UserResponse,
-  type LoginRequest,
   type LoginResponse,
   type CreateUserRequest,
   type UpdateUserRequest,

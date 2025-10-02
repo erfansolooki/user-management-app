@@ -19,10 +19,8 @@ import {
 } from "../types";
 
 class ApiService {
-  private baseURL: string;
-
   constructor() {
-    this.baseURL = API_URLS.BASE_URL;
+    // API URLs are imported from config
   }
 
   /**

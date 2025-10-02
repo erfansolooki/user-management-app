@@ -2,6 +2,7 @@
  * Custom hook for authentication operations
  * Uses React Query for API calls and Zustand for local state
  */
+import toast from "react-hot-toast";
 import { useAuthStore } from "../store/authStore";
 import { useLoginMutation, useLogoutMutation } from "./queries/useAuthQuery";
 import { type LoginRequest, type User } from "../types";
@@ -36,11 +37,13 @@ export const useAuth = () => {
       };
 
       setAuth(mockUser, result.token);
+      toast.success("Login successful!");
       return { success: true };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Login failed";
       setError(errorMessage);
+      toast.error(errorMessage);
       return {
         success: false,
         error: errorMessage,
@@ -51,6 +54,7 @@ export const useAuth = () => {
   const handleLogout = () => {
     logoutMutation.mutate();
     logout();
+    toast.success("Logged out successfully!");
   };
 
   return {

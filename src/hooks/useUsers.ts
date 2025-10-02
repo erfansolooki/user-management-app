@@ -3,6 +3,7 @@
  * Uses React Query for API calls
  */
 import { useState, useMemo, useCallback } from "react";
+import toast from "react-hot-toast";
 import {
   useUsersQuery,
   useUserQuery,
@@ -38,11 +39,15 @@ export const useUsers = () => {
   const handleCreateUser = async (userData: { name: string; job: string }) => {
     try {
       await createUserMutation.mutateAsync(userData);
+      toast.success("User created successfully!");
       return { success: true };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create user";
+      toast.error(errorMessage);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to create user",
+        error: errorMessage,
       };
     }
   };
@@ -53,11 +58,15 @@ export const useUsers = () => {
   ) => {
     try {
       await updateUserMutation.mutateAsync({ id, userData });
+      toast.success("User updated successfully!");
       return { success: true };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update user";
+      toast.error(errorMessage);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to update user",
+        error: errorMessage,
       };
     }
   };
@@ -65,11 +74,15 @@ export const useUsers = () => {
   const handleDeleteUser = async (id: number) => {
     try {
       await deleteUserMutation.mutateAsync(id);
+      toast.success("User deleted successfully!");
       return { success: true };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete user";
+      toast.error(errorMessage);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to delete user",
+        error: errorMessage,
       };
     }
   };

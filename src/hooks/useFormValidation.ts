@@ -100,7 +100,7 @@ export const useFormValidation = ({
   /**
    * Handle input change
    */
-  const handleChange = (name: string, value: unknown) => {
+  const handleChange = useCallback((name: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [name]: value }));
 
     // Clear error for this field when user starts typing
@@ -110,7 +110,7 @@ export const useFormValidation = ({
       }
       return prev;
     });
-  };
+  }, []);
 
   /**
    * Handle input blur with validation
