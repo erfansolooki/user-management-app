@@ -11,6 +11,15 @@ export interface User {
   avatar: string;
 }
 
+// API response types for reqres.in color data
+export interface ColorData {
+  id: number;
+  name: string;
+  year: number;
+  color: string;
+  pantone_value: string;
+}
+
 export interface CreateUserRequest {
   name: string;
   job: string;

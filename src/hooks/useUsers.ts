@@ -1,57 +1,29 @@
 /**
  * Custom hook for user management operations
- * Provides user data and CRUD operations
+ * Uses React Query for API calls
  */
-import { useUserStore } from "../store/userStore";
+import { useState } from "react";
+import {
+  useUsersQuery,
+  useUserQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+} from "./queries/useUsersQuery";
 import { type PaginationParams } from "../types";
 
-export const useUsers = () => {
-  const {
-    users,
-    currentUser,
-    totalPages,
-    currentPage,
-    totalUsers,
-    isLoading,
-    error,
-    fetchUsers,
-    fetchUserById,
-    createUser,
-    updateUser,
-    deleteUser,
-    clearError,
-    setLoading,
-    setCurrentUser,
-    clearCurrentUser,
-  } = useUserStore();
-
-  const handleFetchUsers = async (params?: PaginationParams) => {
-    try {
-      await fetchUsers(params);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch users",
-      };
-    }
-  };
-
-  const handleFetchUserById = async (id: number) => {
-    try {
-      await fetchUserById(id);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch user",
-      };
-    }
-  };
+export const useUsers = (params?: PaginationParams) => {
+  const [currentParams, setCurrentParams] = useState<PaginationParams>(
+    params || {}
+  );
+  const usersQuery = useUsersQuery(currentParams);
+  const createUserMutation = useCreateUserMutation();
+  const updateUserMutation = useUpdateUserMutation();
+  const deleteUserMutation = useDeleteUserMutation();
 
   const handleCreateUser = async (userData: { name: string; job: string }) => {
     try {
-      await createUser(userData);
+      await createUserMutation.mutateAsync(userData);
       return { success: true };
     } catch (error) {
       return {
@@ -66,7 +38,7 @@ export const useUsers = () => {
     userData: { name?: string; job?: string }
   ) => {
     try {
-      await updateUser(id, userData);
+      await updateUserMutation.mutateAsync({ id, userData });
       return { success: true };
     } catch (error) {
       return {
@@ -78,7 +50,7 @@ export const useUsers = () => {
 
   const handleDeleteUser = async (id: number) => {
     try {
-      await deleteUser(id);
+      await deleteUserMutation.mutateAsync(id);
       return { success: true };
     } catch (error) {
       return {
@@ -88,25 +60,39 @@ export const useUsers = () => {
     }
   };
 
+  const fetchUsers = (newParams?: PaginationParams) => {
+    if (newParams) {
+      setCurrentParams(newParams);
+    } else {
+      usersQuery.refetch();
+    }
+  };
+
   return {
-    // State
-    users,
-    currentUser,
-    totalPages,
-    currentPage,
-    totalUsers,
-    isLoading,
-    error,
+    // State from users query
+    users: usersQuery.data?.data.data || [],
+    totalPages: usersQuery.data?.data.total_pages || 0,
+    currentPage: usersQuery.data?.data.page || 1,
+    totalUsers: usersQuery.data?.data.total || 0,
+    isLoading: usersQuery.isLoading,
+    error: usersQuery.error?.message,
 
     // Actions
-    fetchUsers: handleFetchUsers,
-    fetchUserById: handleFetchUserById,
+    fetchUsers,
     createUser: handleCreateUser,
     updateUser: handleUpdateUser,
     deleteUser: handleDeleteUser,
-    clearError,
-    setLoading,
-    setCurrentUser,
-    clearCurrentUser,
+    clearError: () => {}, // React Query handles errors automatically
+  };
+};
+
+export const useUser = (id: number) => {
+  const userQuery = useUserQuery(id);
+
+  return {
+    currentUser: userQuery.data?.data.data || null,
+    isLoading: userQuery.isLoading,
+    error: userQuery.error?.message,
+    fetchUserById: () => userQuery.refetch(),
   };
 };

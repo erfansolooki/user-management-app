@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from "react";
 import { type User } from "../../types";
-import { useUsers } from "../../hooks/useUsers";
+import { useUsers, useUser } from "../../hooks/useUsers";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { type ValidationRules } from "../../types";
 import Modal from "../ui/Modal";
@@ -28,10 +28,9 @@ const UserModal = ({
   mode,
   onSuccess,
 }: UserModalProps) => {
-  const { createUser, updateUser, fetchUserById, isLoading, error } =
-    useUsers();
+  const { createUser, updateUser } = useUsers();
+  const { currentUser, isLoading, error } = useUser(user?.id || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(user);
 
   const validationRules: ValidationRules = {
     name: {
@@ -92,25 +91,21 @@ const UserModal = ({
     },
   });
 
-  // Load user data when modal opens for edit/view mode
+  // Set form values when user data is loaded
   useEffect(() => {
-    if (isOpen && user && (mode === "edit" || mode === "view")) {
-      fetchUserById(user.id).then((result) => {
-        if (result.success) {
-          setCurrentUser(user);
-          setFieldValue("name", `${user.first_name} ${user.last_name}`);
-          setFieldValue("job", "Software Engineer"); // Default job since API doesn't provide it
-        }
-      });
-    } else if (isOpen && mode === "create") {
-      setCurrentUser(null);
+    if (currentUser && (mode === "edit" || mode === "view")) {
+      setFieldValue(
+        "name",
+        `${currentUser.first_name} ${currentUser.last_name}`
+      );
+      setFieldValue("job", "Software Engineer"); // Default job since API doesn't provide it
+    } else if (mode === "create") {
       resetForm();
     }
-  }, [isOpen, user, mode]);
+  }, [currentUser, mode, setFieldValue, resetForm]);
 
   const handleClose = () => {
     resetForm();
-    setCurrentUser(null);
     onClose();
   };
 

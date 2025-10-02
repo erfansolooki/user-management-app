@@ -1,26 +1,23 @@
 /**
- * Authentication store using Zustand
- * Manages authentication state globally
+ * Authentication store using Zustand for local state only
+ * React Query handles API calls
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { apiService } from "../services/api";
-import { type LoginRequest, type User } from "../types";
+import { type User } from "../types";
 
 interface AuthState {
   // State
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  isLoading: boolean;
   error: string | null;
 
   // Actions
-  login: (credentials: LoginRequest) => Promise<void>;
+  setAuth: (user: User, token: string) => void;
   logout: () => void;
   clearError: () => void;
-  setLoading: (loading: boolean) => void;
-  setUser: (user: User) => void;
+  setError: (error: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -30,52 +27,21 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       user: null,
       token: null,
-      isLoading: false,
       error: null,
 
       // Actions
-      login: async (credentials: LoginRequest) => {
-        set({ isLoading: true, error: null });
-
-        try {
-          const response = await apiService.login(credentials);
-          const { token } = response.data;
-
-          // Store token in localStorage
-          localStorage.setItem("auth_token", token);
-
-          // For demo purposes, we'll create a mock user since reqres.in doesn't return user data on login
-          const mockUser: User = {
-            id: 1,
-            email: credentials.email,
-            first_name: "Admin",
-            last_name: "User",
-            avatar: "https://reqres.in/img/faces/1-image.jpg",
-          };
-
-          set({
-            isAuthenticated: true,
-            user: mockUser,
-            token,
-            isLoading: false,
-            error: null,
-          });
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Login failed";
-          set({
-            isAuthenticated: false,
-            user: null,
-            token: null,
-            isLoading: false,
-            error: errorMessage,
-          });
-          throw error;
-        }
+      setAuth: (user: User, token: string) => {
+        localStorage.setItem("auth_token", token);
+        set({
+          isAuthenticated: true,
+          user,
+          token,
+          error: null,
+        });
       },
 
       logout: () => {
-        apiService.clearAuth();
+        localStorage.removeItem("auth_token");
         set({
           isAuthenticated: false,
           user: null,
@@ -88,12 +54,8 @@ export const useAuthStore = create<AuthState>()(
         set({ error: null });
       },
 
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
-
-      setUser: (user: User) => {
-        set({ user });
+      setError: (error: string) => {
+        set({ error });
       },
     }),
     {

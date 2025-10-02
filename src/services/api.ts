@@ -13,6 +13,7 @@ import {
   type UpdateUserRequest,
   type ApiResponse,
   type PaginationParams,
+  type ColorData,
 } from "../types";
 
 class ApiService {
@@ -102,11 +103,70 @@ class ApiService {
       ? `${API_URLS.USERS.LIST}?${queryString}`
       : API_URLS.USERS.LIST;
 
-    return this.request<UsersListResponse>(endpoint);
+    const response = await this.request<UsersListResponse>(endpoint);
+
+    // Transform the color/design data to user data format
+    if (
+      response.data &&
+      response.data.data &&
+      Array.isArray(response.data.data)
+    ) {
+      const transformedUsers = (
+        response.data.data as unknown as ColorData[]
+      ).map((item: ColorData) => ({
+        id: item.id,
+        email: `user${item.id}@reqres.in`,
+        first_name: item.name.split(" ")[0] || "User",
+        last_name: item.name.split(" ").slice(1).join(" ") || "Name",
+        avatar: `https://reqres.in/img/faces/${item.id}-image.jpg`,
+      }));
+
+      return {
+        ...response,
+        data: {
+          page: response.data.page,
+          per_page: response.data.per_page,
+          total: response.data.total,
+          total_pages: response.data.total_pages,
+          data: transformedUsers,
+          support: response.data.support,
+        },
+      };
+    }
+
+    return response;
   }
 
   async getUserById(id: number): Promise<ApiResponse<UserResponse>> {
-    return this.request<UserResponse>(API_URLS.USERS.DETAIL(id));
+    const response = await this.request<UserResponse>(
+      API_URLS.USERS.DETAIL(id)
+    );
+
+    // Transform the color/design data to user data format
+    if (
+      response.data &&
+      response.data.data &&
+      typeof response.data.data === "object"
+    ) {
+      const item = response.data.data as unknown as ColorData;
+      const transformedUser = {
+        id: item.id,
+        email: `user${item.id}@reqres.in`,
+        first_name: item.name.split(" ")[0] || "User",
+        last_name: item.name.split(" ").slice(1).join(" ") || "Name",
+        avatar: `https://reqres.in/img/faces/${item.id}-image.jpg`,
+      };
+
+      return {
+        ...response,
+        data: {
+          data: transformedUser,
+          support: response.data.support,
+        },
+      };
+    }
+
+    return response;
   }
 
   async createUser(
