@@ -100,17 +100,17 @@ export const useFormValidation = ({
   /**
    * Handle input change
    */
-  const handleChange = useCallback(
-    (name: string, value: unknown) => {
-      setValues((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (name: string, value: unknown) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
 
-      // Clear error for this field when user starts typing
-      if (errors[name]) {
-        setErrors((prev) => ({ ...prev, [name]: null }));
+    // Clear error for this field when user starts typing
+    setErrors((prev) => {
+      if (prev[name]) {
+        return { ...prev, [name]: null };
       }
-    },
-    [errors]
-  );
+      return prev;
+    });
+  };
 
   /**
    * Handle input blur with validation

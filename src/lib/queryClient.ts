@@ -8,8 +8,9 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-      retry: 3,
+      retry: 2, // Reduced retries
       refetchOnWindowFocus: false,
+      refetchOnMount: false, // Don't refetch on mount if data is fresh
     },
     mutations: {
       retry: 1,

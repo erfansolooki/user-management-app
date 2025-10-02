@@ -73,6 +73,7 @@ const UserList = () => {
 
   const handleModalSuccess = () => {
     handleModalClose();
+    // Just refresh the current page (less aggressive)
     fetchUsers({ page: currentPage });
   };
 

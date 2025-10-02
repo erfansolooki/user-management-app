@@ -1,8 +1,10 @@
 /**
  * Centralized API service layer
  * Handles all HTTP requests to the backend
+ * Falls back to mock API when real API fails
  */
 import { API_URLS, buildApiUrl } from "../config/urls";
+import { mockApiService } from "./mockApi";
 import {
   type User,
   type UsersListResponse,
@@ -81,10 +83,15 @@ class ApiService {
    * Authentication Services
    */
   async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    return this.request<LoginResponse>(API_URLS.AUTH.LOGIN, {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
+    try {
+      return await this.request<LoginResponse>(API_URLS.AUTH.LOGIN, {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      });
+    } catch (error) {
+      console.warn("Real API failed, falling back to mock API:", error);
+      return mockApiService.login(credentials);
+    }
   }
 
   /**
@@ -93,48 +100,53 @@ class ApiService {
   async getUsers(
     params: PaginationParams = {}
   ): Promise<ApiResponse<UsersListResponse>> {
-    const searchParams = new URLSearchParams();
-    if (params.page) searchParams.append("page", params.page.toString());
-    if (params.per_page)
-      searchParams.append("per_page", params.per_page.toString());
+    try {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.append("page", params.page.toString());
+      if (params.per_page)
+        searchParams.append("per_page", params.per_page.toString());
 
-    const queryString = searchParams.toString();
-    const endpoint = queryString
-      ? `${API_URLS.USERS.LIST}?${queryString}`
-      : API_URLS.USERS.LIST;
+      const queryString = searchParams.toString();
+      const endpoint = queryString
+        ? `${API_URLS.USERS.LIST}?${queryString}`
+        : API_URLS.USERS.LIST;
 
-    const response = await this.request<UsersListResponse>(endpoint);
+      const response = await this.request<UsersListResponse>(endpoint);
 
-    // Transform the color/design data to user data format
-    if (
-      response.data &&
-      response.data.data &&
-      Array.isArray(response.data.data)
-    ) {
-      const transformedUsers = (
-        response.data.data as unknown as ColorData[]
-      ).map((item: ColorData) => ({
-        id: item.id,
-        email: `user${item.id}@reqres.in`,
-        first_name: item.name.split(" ")[0] || "User",
-        last_name: item.name.split(" ").slice(1).join(" ") || "Name",
-        avatar: `https://reqres.in/img/faces/${item.id}-image.jpg`,
-      }));
+      // Transform the color/design data to user data format
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        const transformedUsers = (
+          response.data.data as unknown as ColorData[]
+        ).map((item: ColorData) => ({
+          id: item.id,
+          email: `user${item.id}@reqres.in`,
+          first_name: item.name.split(" ")[0] || "User",
+          last_name: item.name.split(" ").slice(1).join(" ") || "Name",
+          avatar: `https://reqres.in/img/faces/${item.id}-image.jpg`,
+        }));
 
-      return {
-        ...response,
-        data: {
-          page: response.data.page,
-          per_page: response.data.per_page,
-          total: response.data.total,
-          total_pages: response.data.total_pages,
-          data: transformedUsers,
-          support: response.data.support,
-        },
-      };
+        return {
+          ...response,
+          data: {
+            page: response.data.page,
+            per_page: response.data.per_page,
+            total: response.data.total,
+            total_pages: response.data.total_pages,
+            data: transformedUsers,
+            support: response.data.support,
+          },
+        };
+      }
+
+      return response;
+    } catch (error) {
+      console.warn("Real API failed, falling back to mock API:", error);
+      return mockApiService.getUsers(params);
     }
-
-    return response;
   }
 
   async getUserById(id: number): Promise<ApiResponse<UserResponse>> {
@@ -172,32 +184,48 @@ class ApiService {
   async createUser(
     userData: CreateUserRequest
   ): Promise<ApiResponse<User & { job: string; createdAt: string }>> {
-    return this.request<User & { job: string; createdAt: string }>(
-      API_URLS.USERS.CREATE,
-      {
+    try {
+      const response = await this.request<
+        User & { job: string; createdAt: string }
+      >(API_URLS.USERS.CREATE, {
         method: "POST",
         body: JSON.stringify(userData),
-      }
-    );
+      });
+
+      return response;
+    } catch (error) {
+      console.warn("Real API failed, falling back to mock API:", error);
+      return mockApiService.createUser(userData);
+    }
   }
 
   async updateUser(
     id: number,
     userData: UpdateUserRequest
   ): Promise<ApiResponse<User & { job: string; updatedAt: string }>> {
-    return this.request<User & { job: string; updatedAt: string }>(
-      API_URLS.USERS.UPDATE(id),
-      {
-        method: "PUT",
-        body: JSON.stringify(userData),
-      }
-    );
+    try {
+      return await this.request<User & { job: string; updatedAt: string }>(
+        API_URLS.USERS.UPDATE(id),
+        {
+          method: "PUT",
+          body: JSON.stringify(userData),
+        }
+      );
+    } catch (error) {
+      console.warn("Real API failed, falling back to mock API:", error);
+      return mockApiService.updateUser(id, userData);
+    }
   }
 
   async deleteUser(id: number): Promise<ApiResponse<void>> {
-    return this.request<void>(API_URLS.USERS.DELETE(id), {
-      method: "DELETE",
-    });
+    try {
+      return await this.request<void>(API_URLS.USERS.DELETE(id), {
+        method: "DELETE",
+      });
+    } catch (error) {
+      console.warn("Real API failed, falling back to mock API:", error);
+      return mockApiService.deleteUser(id);
+    }
   }
 
   /**

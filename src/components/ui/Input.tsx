@@ -17,9 +17,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const baseClasses =
-      "block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm";
+      "block w-full px-4 py-3 rounded-lg border-2 border-gray-200 shadow-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none sm:text-sm placeholder-gray-400";
     const errorClasses = error
-      ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
       : "";
     const widthClasses = fullWidth ? "w-full" : "";
 

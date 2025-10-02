@@ -35,9 +35,14 @@ export const useCreateUserMutation = () => {
   return useMutation({
     mutationFn: (userData: CreateUserRequest) =>
       apiService.createUser(userData),
-    onSuccess: () => {
-      // Invalidate users list
+    onSuccess: (data) => {
+      console.log("Create user success:", data);
+      // Invalidate users list only (less aggressive)
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      console.log("Cache invalidated for create");
+    },
+    onError: (error) => {
+      console.error("Create user error:", error);
     },
   });
 };
@@ -54,12 +59,59 @@ export const useUpdateUserMutation = () => {
       id: number;
       userData: UpdateUserRequest;
     }) => apiService.updateUser(id, userData),
-    onSuccess: (_, variables) => {
-      // Invalidate users list and specific user detail
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.users.detail(variables.id),
+    onMutate: async ({ id, userData }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.users.lists() });
+
+      // Snapshot the previous value
+      const previousUsers = queryClient.getQueriesData({
+        queryKey: queryKeys.users.lists(),
       });
+
+      // Optimistically update the cache
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.users.lists() },
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              data: old.data.data.map((user: any) =>
+                user.id === id
+                  ? {
+                      ...user,
+                      first_name:
+                        userData.name?.split(" ")[0] || user.first_name,
+                      last_name:
+                        userData.name?.split(" ").slice(1).join(" ") ||
+                        user.last_name,
+                    }
+                  : user
+              ),
+            },
+          };
+        }
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousUsers };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousUsers) {
+        context.previousUsers.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      console.error("Update user error:", err);
+    },
+    onSuccess: (data, variables) => {
+      console.log("Update user success:", data);
+      // Invalidate to ensure we have the latest data from server
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      console.log("Cache invalidated for update");
     },
   });
 };
@@ -70,9 +122,14 @@ export const useDeleteUserMutation = () => {
 
   return useMutation({
     mutationFn: (id: number) => apiService.deleteUser(id),
-    onSuccess: () => {
-      // Invalidate users list
+    onSuccess: (data) => {
+      console.log("Delete user success:", data);
+      // Invalidate users list only (less aggressive)
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      console.log("Cache invalidated for delete");
+    },
+    onError: (error) => {
+      console.error("Delete user error:", error);
     },
   });
 };

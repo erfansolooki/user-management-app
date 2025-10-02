@@ -9,7 +9,6 @@ import { useFormValidation } from "../../hooks/useFormValidation";
 import { type ValidationRules } from "../../types";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
 import Alert from "../ui/Alert";
 import LoadingSpinner from "../ui/LoadingSpinner";
 
@@ -64,11 +63,14 @@ const UserModal = ({
 
       try {
         if (mode === "create") {
+          console.log("Creating user with data:", formValues);
           const result = await createUser(
             formValues as { name: string; job: string }
           );
+          console.log("Create user result:", result);
           if (result.success) {
             onSuccess();
+            handleClose();
           } else {
             alert(result.error);
           }
@@ -102,7 +104,7 @@ const UserModal = ({
     } else if (mode === "create") {
       resetForm();
     }
-  }, [currentUser, mode, setFieldValue, resetForm]);
+  }, [currentUser, mode]);
 
   const handleClose = () => {
     resetForm();
@@ -151,31 +153,41 @@ const UserModal = ({
             )}
 
             <div>
-              <Input
-                label="Name"
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
                 name="name"
-                value={values.name as string}
+                value={(values.name as string) || ""}
                 onChange={(e) => handleChange("name", e.target.value)}
                 onBlur={() => handleBlur("name")}
-                error={errors.name}
                 disabled={isReadOnly}
-                fullWidth
                 placeholder="Enter full name"
+                className="block w-full px-4 py-3 rounded-lg border-2 border-gray-200 shadow-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none sm:text-sm placeholder-gray-400"
               />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              )}
             </div>
 
             <div>
-              <Input
-                label="Job"
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Job
+              </label>
+              <input
+                type="text"
                 name="job"
-                value={values.job as string}
+                value={(values.job as string) || ""}
                 onChange={(e) => handleChange("job", e.target.value)}
                 onBlur={() => handleBlur("job")}
-                error={errors.job}
                 disabled={isReadOnly}
-                fullWidth
                 placeholder="Enter job title"
+                className="block w-full px-4 py-3 rounded-lg border-2 border-gray-200 shadow-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none sm:text-sm placeholder-gray-400"
               />
+              {errors.job && (
+                <p className="mt-1 text-sm text-red-600">{errors.job}</p>
+              )}
             </div>
 
             {!isReadOnly && (
