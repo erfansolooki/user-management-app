@@ -11,15 +11,22 @@ import LoadingSpinner from "../ui/LoadingSpinner";
 import Alert from "../ui/Alert";
 import UserCard from "./UserCard";
 import UserModal from "./UserModal.tsx";
+import FilterSort from "./FilterSort";
 
 const UserList = () => {
   const {
     users,
+    originalUsers,
     totalPages,
     currentPage,
-    totalUsers,
     isLoading,
     error,
+    searchTerm,
+    setSearchTerm,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     fetchUsers,
     deleteUser,
     clearError,
@@ -33,7 +40,7 @@ const UserList = () => {
 
   useEffect(() => {
     fetchUsers({ page: 1 });
-  }, []);
+  }, [fetchUsers]);
 
   const handlePageChange = (page: number) => {
     fetchUsers({ page });
@@ -100,10 +107,24 @@ const UserList = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-600">Total: {totalUsers} users</p>
+          <p className="text-gray-600">
+            Showing {users.length} of {originalUsers.length} users
+            {searchTerm && ` (filtered by "${searchTerm}")`}
+            {sortBy && ` (sorted by ${sortBy})`}
+          </p>
         </div>
         <Button onClick={handleCreateUser}>Add New User</Button>
       </div>
+
+      {/* Filter and Sort Controls */}
+      <FilterSort
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-8">
@@ -126,7 +147,25 @@ const UserList = () => {
           {users.length === 0 && (
             <Card>
               <Card.Body className="text-center py-8">
-                <p className="text-gray-500">No users found.</p>
+                <p className="text-gray-500">
+                  {searchTerm || sortBy
+                    ? "No users match your current filter/sort criteria."
+                    : "No users found."}
+                </p>
+                {(searchTerm || sortBy) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSortBy("");
+                      setSortOrder("asc");
+                    }}
+                    className="mt-2"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </Card.Body>
             </Card>
           )}

@@ -35,14 +35,60 @@ export const useCreateUserMutation = () => {
   return useMutation({
     mutationFn: (userData: CreateUserRequest) =>
       apiService.createUser(userData),
+    onMutate: async (userData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.users.lists() });
+
+      // Snapshot the previous value
+      const previousUsers = queryClient.getQueriesData({
+        queryKey: queryKeys.users.lists(),
+      });
+
+      // Optimistically add the new user to the cache
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.users.lists() },
+        (old: any) => {
+          if (!old) return old;
+
+          // Create a new user object for the optimistic update
+          const newUser = {
+            id: Date.now(), // Temporary ID
+            email: `${userData.name
+              .toLowerCase()
+              .replace(/\s+/g, ".")}@reqres.in`,
+            first_name: userData.name.split(" ")[0] || "User",
+            last_name: userData.name.split(" ").slice(1).join(" ") || "Name",
+            avatar: `https://reqres.in/img/faces/${Date.now()}-image.jpg`,
+          };
+
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              data: [newUser, ...old.data.data],
+              total: old.data.total + 1,
+            },
+          };
+        }
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousUsers };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousUsers) {
+        context.previousUsers.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      console.error("Create user error:", err);
+    },
     onSuccess: (data) => {
       console.log("Create user success:", data);
-      // Invalidate users list only (less aggressive)
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
-      console.log("Cache invalidated for create");
-    },
-    onError: (error) => {
-      console.error("Create user error:", error);
+      // Don't invalidate - optimistic update already handled UI
+      // queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      console.log("Create user completed - no refetch");
     },
   });
 };
@@ -109,9 +155,9 @@ export const useUpdateUserMutation = () => {
     },
     onSuccess: (data, variables) => {
       console.log("Update user success:", data);
-      // Invalidate to ensure we have the latest data from server
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
-      console.log("Cache invalidated for update");
+      // Don't invalidate - optimistic update already handled UI
+      // queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      console.log("Update user completed - no refetch");
     },
   });
 };

@@ -2,7 +2,7 @@
  * Custom hook for user management operations
  * Uses React Query for API calls
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useUsersQuery,
   useUserQuery,
@@ -10,12 +10,18 @@ import {
   useUpdateUserMutation,
   useDeleteUserMutation,
 } from "./queries/useUsersQuery";
-import { type PaginationParams } from "../types";
+import { type PaginationParams, type User } from "../types";
 
 export const useUsers = (params?: PaginationParams) => {
   const [currentParams, setCurrentParams] = useState<PaginationParams>(
     params || {}
   );
+
+  // Filter and sort state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<keyof User | "">("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   const usersQuery = useUsersQuery(currentParams);
   const createUserMutation = useCreateUserMutation();
   const updateUserMutation = useUpdateUserMutation();
@@ -60,6 +66,45 @@ export const useUsers = (params?: PaginationParams) => {
     }
   };
 
+  // Filter and sort logic
+  const filteredAndSortedUsers = useMemo(() => {
+    let users = usersQuery.data?.data.data || [];
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      users = users.filter(
+        (user) =>
+          user.first_name.toLowerCase().includes(term) ||
+          user.last_name.toLowerCase().includes(term) ||
+          user.email.toLowerCase().includes(term) ||
+          `${user.first_name} ${user.last_name}`.toLowerCase().includes(term)
+      );
+    }
+
+    // Apply sorting
+    if (sortBy) {
+      users = [...users].sort((a, b) => {
+        const aValue = a[sortBy];
+        const bValue = b[sortBy];
+
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          const comparison = aValue.localeCompare(bValue);
+          return sortOrder === "asc" ? comparison : -comparison;
+        }
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          const comparison = aValue - bValue;
+          return sortOrder === "asc" ? comparison : -comparison;
+        }
+
+        return 0;
+      });
+    }
+
+    return users;
+  }, [usersQuery.data?.data.data, searchTerm, sortBy, sortOrder]);
+
   const fetchUsers = (newParams?: PaginationParams) => {
     if (newParams) {
       setCurrentParams(newParams);
@@ -70,12 +115,21 @@ export const useUsers = (params?: PaginationParams) => {
 
   return {
     // State from users query
-    users: usersQuery.data?.data.data || [],
+    users: filteredAndSortedUsers,
+    originalUsers: usersQuery.data?.data.data || [],
     totalPages: usersQuery.data?.data.total_pages || 0,
     currentPage: usersQuery.data?.data.page || 1,
     totalUsers: usersQuery.data?.data.total || 0,
     isLoading: usersQuery.isLoading,
     error: usersQuery.error?.message,
+
+    // Filter and sort state
+    searchTerm,
+    setSearchTerm,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
 
     // Actions
     fetchUsers,
