@@ -2,11 +2,12 @@
  * React Query hooks for user management
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService } from "../../services/api";
+import { apiService } from "../../services/apiAxios";
 import {
   type PaginationParams,
   type CreateUserRequest,
   type UpdateUserRequest,
+  type User,
 } from "../../types";
 import { queryKeys } from "../../lib/queryKeys";
 
@@ -49,8 +50,9 @@ export const useCreateUserMutation = () => {
       // Optimistically add the new user to the cache
       queryClient.setQueriesData(
         { queryKey: queryKeys.users.lists() },
-        (old: any) => {
-          if (!old) return old;
+        (old: unknown) => {
+          if (!old || typeof old !== "object") return old;
+          const oldData = old as Record<string, unknown>; // Type assertion for cache data
 
           // Create a new user object for the optimistic update
           const newUser = {
@@ -68,11 +70,15 @@ export const useCreateUserMutation = () => {
           };
 
           return {
-            ...old,
+            ...oldData,
             data: {
-              ...old.data,
-              data: [newUser, ...old.data.data],
-              total: old.data.total + 1,
+              ...(oldData.data as Record<string, unknown>),
+              data: [
+                newUser,
+                ...((oldData.data as Record<string, unknown>).data as User[]),
+              ],
+              total:
+                ((oldData.data as Record<string, unknown>).total as number) + 1,
             },
           };
         }
@@ -81,7 +87,7 @@ export const useCreateUserMutation = () => {
       // Return a context object with the snapshotted value
       return { previousUsers };
     },
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousUsers) {
         context.previousUsers.forEach(([queryKey, data]) => {
@@ -123,14 +129,17 @@ export const useUpdateUserMutation = () => {
       // Optimistically update the cache
       queryClient.setQueriesData(
         { queryKey: queryKeys.users.lists() },
-        (old: any) => {
-          if (!old) return old;
+        (old: unknown) => {
+          if (!old || typeof old !== "object") return old;
+          const oldData = old as Record<string, unknown>; // Type assertion for cache data
 
           return {
-            ...old,
+            ...oldData,
             data: {
-              ...old.data,
-              data: old.data.data.map((user: any) =>
+              ...(oldData.data as Record<string, unknown>),
+              data: (
+                (oldData.data as Record<string, unknown>).data as User[]
+              ).map((user: User) =>
                 user.id === id
                   ? {
                       ...user,
@@ -150,7 +159,7 @@ export const useUpdateUserMutation = () => {
       // Return a context object with the snapshotted value
       return { previousUsers };
     },
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousUsers) {
         context.previousUsers.forEach(([queryKey, data]) => {
@@ -159,7 +168,7 @@ export const useUpdateUserMutation = () => {
       }
       console.error("Update user error:", err);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       console.log("Update user success:", data);
       // Don't invalidate - optimistic update already handled UI
       // queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });

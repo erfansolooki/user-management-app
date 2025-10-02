@@ -88,7 +88,7 @@ class ApiService {
       });
     } catch (error) {
       console.warn("Real API failed, falling back to mock API:", error);
-      return mockApiService.login(credentials);
+      return mockApiService.login();
     }
   }
 

@@ -2,7 +2,7 @@
  * React Query hooks for authentication
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService } from "../../services/api";
+import { apiService } from "../../services/apiAxios";
 import { type LoginRequest, type LoginResponse } from "../../types";
 import { queryKeys } from "../../lib/queryKeys";
 

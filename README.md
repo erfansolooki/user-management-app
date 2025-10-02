@@ -16,6 +16,8 @@ This project demonstrates advanced React development skills, architectural patte
 - **⚡ Performance**: Optimized with React Query caching and optimistic updates
 - **🛡️ Type Safety**: Comprehensive TypeScript implementation
 - **🏗️ Clean Architecture**: SOLID principles and modular design patterns
+- **🚨 Error Handling**: Comprehensive error management with Axios interceptors
+- **🔔 Notifications**: Toast notifications and modal confirmations
 
 ## 🛠️ Tech Stack
 
@@ -23,9 +25,11 @@ This project demonstrates advanced React development skills, architectural patte
 - **Vite** for lightning-fast build tooling and HMR
 - **React Router DOM** for client-side routing
 - **React Query (TanStack Query)** for server state management and caching
+- **Axios** for HTTP client with interceptors and error handling
 - **Zustand** for client state management
 - **Tailwind CSS** for utility-first styling
 - **PostCSS** for CSS processing
+- **React Hot Toast** for notifications and confirmations
 - **reqres.in API** for backend services with fallback to mock API
 
 ## 📁 Project Structure
@@ -61,12 +65,15 @@ src/
 │       ├── useAuthQuery.ts # Auth mutations
 │       └── useUsersQuery.ts # User queries & mutations
 ├── services/               # API service layer
-│   ├── api.ts             # Main API service
+│   ├── api.ts             # Main API service (fetch-based)
+│   ├── apiAxios.ts        # Axios-based API service
 │   └── mockApi.ts         # Mock API fallback
 ├── store/                 # State management
 │   ├── authStore.ts       # Authentication store (Zustand)
 │   └── userStore.ts       # User store (Zustand)
 ├── lib/                   # Utility libraries
+│   ├── axios.ts           # Axios instance with interceptors
+│   ├── errors.ts          # Custom error classes
 │   ├── queryClient.ts     # React Query configuration
 │   └── queryKeys.ts       # Query key factory
 ├── types/                 # TypeScript definitions
@@ -193,8 +200,8 @@ const { values, errors, handleChange, handleSubmit } = useFormValidation({
 #### 3. **Service Layer Pattern**
 
 ```tsx
-// Centralized API management
-import { apiService } from "../services/api";
+// Centralized API management with Axios interceptors
+import { apiService } from "../services/apiAxios";
 const response = await apiService.getUsers({ page: 1, per_page: 10 });
 ```
 
@@ -297,13 +304,16 @@ export const queryKeys = {
 ## 🚀 Technical Achievements
 
 ### **Performance Optimizations**
+
 - **React Query Caching**: Intelligent data caching with stale-while-revalidate strategy
 - **Optimistic Updates**: Immediate UI feedback with automatic rollback on errors
 - **Code Splitting**: Lazy loading of components and routes
 - **Memoization**: Strategic use of `useMemo` and `useCallback` for expensive operations
 - **Bundle Optimization**: Vite's tree-shaking and code splitting
+- **Axios Interceptors**: Centralized request/response handling with automatic retries
 
 ### **Developer Experience**
+
 - **TypeScript**: 100% type coverage with strict mode
 - **ESLint**: Comprehensive linting rules for code quality
 - **Hot Module Replacement**: Instant feedback during development
@@ -311,6 +321,7 @@ export const queryKeys = {
 - **Debugging Tools**: React DevTools and Query DevTools integration
 
 ### **Scalability Features**
+
 - **Modular Architecture**: Easy to extend with new features
 - **Reusable Components**: DRY principle with compound components
 - **Custom Hooks**: Business logic encapsulation and reusability
@@ -318,15 +329,19 @@ export const queryKeys = {
 - **Configuration Management**: Environment-based configuration
 
 ### **User Experience**
+
 - **Responsive Design**: Mobile-first approach with adaptive layouts
 - **Loading States**: Skeleton loaders and progress indicators
 - **Error Handling**: User-friendly error messages and recovery options
+- **Toast Notifications**: Non-blocking success/error feedback with React Hot Toast
+- **Modal Confirmations**: Centered, blocking confirmation dialogs
 - **Accessibility**: ARIA labels, keyboard navigation, and screen reader support
 - **Progressive Enhancement**: Works without JavaScript for basic functionality
 
 ## 🧪 Testing Strategy
 
 ### **Unit Testing** (Recommended)
+
 ```bash
 # Install testing dependencies
 npm install --save-dev @testing-library/react @testing-library/jest-dom vitest
@@ -336,11 +351,13 @@ npm run test
 ```
 
 ### **Integration Testing**
+
 - Component integration with React Query
 - Form validation testing
 - API service testing with mock data
 
 ### **E2E Testing** (Recommended)
+
 ```bash
 # Install Playwright
 npm install --save-dev @playwright/test
@@ -352,12 +369,14 @@ npx playwright test
 ## 📊 Performance Metrics
 
 ### **Bundle Analysis**
+
 - **Initial Bundle**: ~150KB gzipped
 - **Code Splitting**: Route-based lazy loading
 - **Tree Shaking**: Unused code elimination
 - **Asset Optimization**: Image and font optimization
 
 ### **Runtime Performance**
+
 - **First Contentful Paint**: < 1.5s
 - **Largest Contentful Paint**: < 2.5s
 - **Cumulative Layout Shift**: < 0.1
@@ -366,6 +385,7 @@ npx playwright test
 ## 🔧 Development
 
 ### **Available Scripts**
+
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
@@ -375,6 +395,7 @@ npm run type-check   # TypeScript type checking
 ```
 
 ### **Code Quality Standards**
+
 - **ESLint**: Airbnb configuration with React hooks rules
 - **TypeScript**: Strict mode with no implicit any
 - **Prettier**: Consistent code formatting
@@ -382,6 +403,7 @@ npm run type-check   # TypeScript type checking
 - **Conventional Commits**: Standardized commit messages
 
 ### **Git Workflow**
+
 ```bash
 # Feature development
 git checkout -b feature/user-management
@@ -392,27 +414,152 @@ git push origin feature/user-management
 # Create pull request for code review
 ```
 
+## 🚨 Error Handling & Interceptors
+
+### **Axios Interceptors Architecture**
+
+The application implements comprehensive error handling using Axios interceptors for centralized request/response management:
+
+#### **Request Interceptor**
+
+```tsx
+// Automatic token injection and request logging
+axiosInstance.interceptors.request.use((config) => {
+  // Add auth token if available
+  const token = localStorage.getItem("auth_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Add cache busting
+  config.params = { ...config.params, _t: Date.now() };
+
+  console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+  return config;
+});
+```
+
+#### **Response Interceptor**
+
+```tsx
+// Centralized error handling with user-friendly messages
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const { response, request, message } = error;
+
+    if (response) {
+      // Server responded with error status
+      switch (response.status) {
+        case 401:
+          toast.error("Session expired. Please login again.");
+          localStorage.clear();
+          window.location.href = "/login";
+          break;
+        case 404:
+          toast.error("The requested resource was not found.");
+          break;
+        case 429:
+          toast.error("Too many requests. Please wait a moment.");
+          break;
+        case 500:
+          toast.error("Server error. Please try again later.");
+          break;
+        // ... more error cases
+      }
+    } else if (request) {
+      // Network error
+      toast.error("Network error. Please check your connection.");
+    }
+
+    return Promise.reject(error);
+  }
+);
+```
+
+#### **Custom Error Classes**
+
+```tsx
+// Structured error handling with type safety
+export class ApiError extends Error {
+  public status: number;
+  public code: string;
+  public isNetworkError: boolean;
+
+  get isClientError(): boolean {
+    return this.status >= 400 && this.status < 500;
+  }
+
+  get isServerError(): boolean {
+    return this.status >= 500 && this.status < 600;
+  }
+
+  get isAuthError(): boolean {
+    return this.status === 401 || this.status === 403;
+  }
+}
+```
+
+#### **React Query Integration**
+
+```tsx
+// Smart retry logic based on error types
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (isApiError(error) && error.isClientError) {
+          return false; // Don't retry client errors
+        }
+        return failureCount < 2; // Retry server errors
+      },
+    },
+    mutations: {
+      retry: (failureCount, error) => {
+        if (isApiError(error) && error.isClientError) {
+          return false; // Don't retry client errors
+        }
+        return failureCount < 1; // Retry once for server errors
+      },
+    },
+  },
+});
+```
+
+### **Error Handling Benefits**
+
+- **🎯 Centralized Management**: All errors handled in one place
+- **🔄 Automatic Retries**: Smart retry logic based on error types
+- **👤 User-Friendly Messages**: Clear, actionable error feedback
+- **🔐 Auto-Logout**: Seamless authentication error handling
+- **📱 Toast Notifications**: Non-blocking error feedback
+- **🛡️ Type Safety**: Structured error objects with type guards
+
 ## 🌟 Why This Architecture?
 
 ### **1. Maintainability**
+
 - **Separation of Concerns**: Each layer has a specific responsibility
 - **Modular Design**: Easy to modify without affecting other parts
 - **Type Safety**: Catch errors at compile time, not runtime
 - **Documentation**: Self-documenting code with TypeScript
 
 ### **2. Scalability**
+
 - **Component Reusability**: Build once, use everywhere
 - **Hook Composition**: Complex logic broken into manageable pieces
 - **Service Abstraction**: Easy to swap implementations
 - **State Management**: Predictable state updates
 
 ### **3. Performance**
+
 - **React Query**: Intelligent caching and background updates
 - **Optimistic Updates**: Perceived performance improvements
 - **Code Splitting**: Load only what's needed
 - **Bundle Optimization**: Minimal JavaScript footprint
 
 ### **4. Developer Experience**
+
 - **TypeScript**: IntelliSense and error prevention
 - **Hot Reload**: Instant feedback during development
 - **Debugging**: Excellent tooling support
@@ -421,12 +568,14 @@ git push origin feature/user-management
 ## 🎯 Business Value
 
 ### **For Development Teams**
+
 - **Faster Development**: Reusable components and hooks
 - **Reduced Bugs**: Type safety and validation
 - **Easy Onboarding**: Clear architecture and patterns
 - **Maintainable Code**: SOLID principles and clean architecture
 
 ### **For End Users**
+
 - **Fast Performance**: Optimized loading and caching
 - **Great UX**: Responsive design and smooth interactions
 - **Reliability**: Error handling and fallback strategies
@@ -435,6 +584,7 @@ git push origin feature/user-management
 ## 📈 Future Enhancements
 
 ### **Phase 2 Features**
+
 - [ ] **Real-time Updates**: WebSocket integration for live data
 - [ ] **Offline Support**: Service worker and PWA capabilities
 - [ ] **Advanced Filtering**: Multi-column sorting and filtering
@@ -442,6 +592,7 @@ git push origin feature/user-management
 - [ ] **Export/Import**: CSV and Excel data handling
 
 ### **Phase 3 Features**
+
 - [ ] **Role-based Access**: User permissions and roles
 - [ ] **Audit Logging**: Track all user actions
 - [ ] **Advanced Analytics**: Usage metrics and insights
@@ -455,4 +606,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ for Novine Dev Company**  
-*Demonstrating modern React development skills and architectural excellence*
+_Demonstrating modern React development skills and architectural excellence_
