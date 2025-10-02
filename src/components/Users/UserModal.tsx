@@ -11,6 +11,7 @@ import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 import Alert from "../ui/Alert";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import UserAvatar from "../ui/UserAvatar";
 
 interface UserModalProps {
   isOpen: boolean;
@@ -137,10 +138,10 @@ const UserModal = ({
 
             {currentUser && (
               <div className="flex items-center space-x-4 mb-6">
-                <img
+                <UserAvatar
                   src={currentUser.avatar}
                   alt={`${currentUser.first_name} ${currentUser.last_name}`}
-                  className="h-16 w-16 rounded-full"
+                  size="xl"
                 />
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">

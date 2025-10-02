@@ -5,6 +5,7 @@
 import { type User } from "../../types";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
+import UserAvatar from "../ui/UserAvatar";
 
 interface UserCardProps {
   user: User;
@@ -18,10 +19,10 @@ const UserCard = ({ user, onEdit, onView, onDelete }: UserCardProps) => {
     <Card>
       <Card.Body>
         <div className="flex items-center space-x-4">
-          <img
+          <UserAvatar
             src={user.avatar}
             alt={`${user.first_name} ${user.last_name}`}
-            className="h-12 w-12 rounded-full"
+            size="lg"
           />
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-medium text-gray-900 truncate">

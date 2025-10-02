@@ -60,7 +60,11 @@ export const useCreateUserMutation = () => {
               .replace(/\s+/g, ".")}@reqres.in`,
             first_name: userData.name.split(" ")[0] || "User",
             last_name: userData.name.split(" ").slice(1).join(" ") || "Name",
-            avatar: `https://reqres.in/img/faces/${Date.now()}-image.jpg`,
+            // Randomly assign avatar or no avatar for testing
+            avatar:
+              Math.random() > 0.5
+                ? `https://reqres.in/img/faces/${Date.now()}-image.jpg`
+                : "",
           };
 
           return {

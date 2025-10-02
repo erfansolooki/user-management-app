@@ -99,9 +99,23 @@ const mockUsers: User[] = [
     last_name: "Howell",
     avatar: "https://reqres.in/img/faces/12-image.jpg",
   },
+  {
+    id: 13,
+    email: "john.doe@example.com",
+    first_name: "John",
+    last_name: "Doe",
+    avatar: "", // No avatar - should show default icon
+  },
+  {
+    id: 14,
+    email: "jane.smith@example.com",
+    first_name: "Jane",
+    last_name: "Smith",
+    avatar: "", // No avatar - should show default icon
+  },
 ];
 
-let nextId = 13;
+let nextId = 15; // Updated for the new users
 
 class MockApiService {
   private delay(ms: number = 500): Promise<void> {

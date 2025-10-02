@@ -1,5 +1,6 @@
 import { type User } from "../../types";
 import Button from "../ui/Button";
+import UserAvatar from "../ui/UserAvatar";
 
 interface UserTableProps {
   users: User[];
@@ -33,11 +34,11 @@ const UserTable = ({ users, onEdit, onView, onDelete }: UserTableProps) => {
             <tr key={user.id} className="hover:bg-gray-50">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
-                  <div className="flex-shrink-0 h-10 w-10">
-                    <img
-                      className="h-10 w-10 rounded-full"
+                  <div className="flex-shrink-0">
+                    <UserAvatar
                       src={user.avatar}
                       alt={`${user.first_name} ${user.last_name}`}
+                      size="md"
                     />
                   </div>
                   <div className="ml-4">
