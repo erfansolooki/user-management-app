@@ -2,7 +2,7 @@
  * Custom hook for user management operations
  * Uses React Query for API calls
  */
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   useUsersQuery,
   useUserQuery,
@@ -74,10 +74,8 @@ export const useUsers = () => {
     }
   };
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, sortBy, sortOrder]);
+  // Note: For server-side pagination, we don't need to reset to page 1 when filters change
+  // The server will handle filtering and return the appropriate page
 
   // Apply client-side filtering and sorting to the current page data
   const filteredAndSortedUsers = useMemo(() => {
@@ -118,13 +116,16 @@ export const useUsers = () => {
     return users;
   }, [usersQuery.data?.data.data, searchTerm, sortBy, sortOrder]);
 
-  const fetchUsers = (newParams?: PaginationParams) => {
-    if (newParams?.page) {
-      setCurrentPage(newParams.page);
-    } else {
-      usersQuery.refetch();
-    }
-  };
+  const fetchUsers = useCallback(
+    (newParams?: PaginationParams) => {
+      if (newParams?.page) {
+        setCurrentPage(newParams.page);
+      } else {
+        usersQuery.refetch();
+      }
+    },
+    [usersQuery]
+  );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

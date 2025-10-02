@@ -62,9 +62,8 @@ const UserList = () => {
     }
   }, [isMobile, viewMode, setViewMode]);
 
-  useEffect(() => {
-    fetchUsers({ page: 1 });
-  }, [fetchUsers]);
+  // Note: Removed useEffect that was causing page reset issues
+  // The useUsers hook will handle initial data loading
 
   // Remove the old handlePageChange since it's now provided by useUsers hook
 
