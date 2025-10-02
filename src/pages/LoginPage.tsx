@@ -1,0 +1,11 @@
+/**
+ * Login Page Component
+ * Public page for user authentication
+ */
+import LoginForm from "../components/Auth/LoginForm";
+
+const LoginPage = () => {
+  return <LoginForm />;
+};
+
+export default LoginPage;
