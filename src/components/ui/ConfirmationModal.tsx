@@ -33,15 +33,22 @@ const ConfirmationModal = ({
       }
     };
 
+    const preventScroll = (e: WheelEvent) => {
+      e.preventDefault();
+    };
+
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
       // Prevent body scroll
       document.body.style.overflow = "hidden";
+      // Prevent mouse wheel scrolling
+      document.addEventListener("wheel", preventScroll, { passive: false });
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "unset";
+      document.removeEventListener("wheel", preventScroll);
     };
   }, [isOpen, onCancel]);
 
